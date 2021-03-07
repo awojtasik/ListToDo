@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shoping List</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="shopping_list">
+        <form class="shopping" autocomplete="off">
+            <input type="text" name="item" id="item" required>
+            <button type="submit">+ Add Item</button>
+        </form>
+        <ul class="list"></ul>
+
+        <script>
+            const shoppingForm = document.querySelector('.shopping');
+            const list = document.querySelector('.list');
+// we need on array to hold our state
+            let items = [];
+
+            function submitHandler(e) {
+                e.preventDefault();
+                
+                const name = e.currentTarget.item.value;
+                // if its empty then don't submit it
+                if(!name) return;
+                
+                const item = {
+                    name: name,
+                    id: Date.now(),
+                    complete: false
+                }
+                // pust the item into our state
+                items.push(item);
+                console.log(`thera are now ${items.length} in your state`);
+
+                // clear the form
+                // first way:
+                // e.currentTarget.item.value = '';
+                // second way
+                e.target.reset();
+                // e.currentTarget.reset() // it ise the same lake target
+                // displayItems();
+
+                list.dispatchEvent(new CustomEvent('itemsUpdated'));
+            };
+
+
+            function displayItems() {
+                console.log(items);
+                const html = items.map(item => `<li class="shopping-item">
+                    <input value="${item.id}" 
+                    type="checkbox"
+                    ${item.complete ? 'checked' : ''}
+                    >
+                    <span class="itemName">${item.name}</span>
+                    <button 
+                    aria-label="Remove ${item.name}"
+                    value="${item.id}"
+                    >&times;</button>
+                    </li>`).join('');
+                list.innerHTML = html;
+            };
+
+            function mirrorToLocalStorage() {
+                console.info('Saving item to localStorage');
+                localStorage.setItem('items', JSON.stringify(items))
+            };
+
+            function restoreFromLocalStorage() {
+                console.info('Restoring from LS');
+                // pull the items from LS
+                const lsItems = JSON.parse(localStorage.getItem('items'));
+                if(lsItems.length) {
+                    items = lsItems;
+                    list.dispatchEvent(new CustomEvent('itemsUpdated'));
+                };
+            };
+
+            function deleteItems(id) {
+                console.log('deliting items', id);
+                // update our items array without this one
+                items = items.filter(item => item.id !== id);
+                list.dispatchEvent(new CustomEvent('itemsUpdated'));
+            };
+
+            function markAsComplete(id) {
+                console.log('Marking is complited', id);
+                const itemRef = items.find(item => item.id === id);
+                itemRef.complete = !itemRef.complete;
+                list.dispatchEvent(new CustomEvent('itemsUpdated'));
+            }
+
+            shoppingForm.addEventListener('submit', submitHandler);
+            list.addEventListener('itemsUpdated', displayItems);
+            list.addEventListener('itemsUpdated', mirrorToLocalStorage);
+            list.addEventListener('click', function(e) {
+                if(e.target.matches('button')) {
+                    deleteItems(parseInt(e.target.value));
+                }
+                if(e.target.matches('input[type="checkbox"]')) {
+                    markAsComplete(parseInt(e.target.value));
+                }
+            });
+
+            restoreFromLocalStorage();
+
+            // const buttons = document.querySelector('button');
+            // console.log(buttons);
+
+            // buttons.forEach(button => button.addEventListener('click', deleteItems));
+
+
+
+        </script>
+    </div>
+</body>
+</html>
